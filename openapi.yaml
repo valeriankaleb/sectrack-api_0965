@@ -1,0 +1,239 @@
+openapi: 3.0.3
+info:
+  title: SecTrack Cybersecurity REST API
+  version: 1.0.0
+  description: MVP REST API untuk pengelolaan aset, vulnerability tracking, pelaporan insiden, dan audit log.
+servers:
+  - url: http://127.0.0.1:5000
+    description: Local Development Server
+paths:
+  /:
+    get:
+      summary: Health Check API
+      responses:
+        '200':
+          description: Service aktif
+  /api/v1/users:
+    get:
+      summary: Daftar seluruh pengguna/analis
+      responses:
+        '200':
+          description: Berhasil mengambil daftar pengguna
+    post:
+      summary: Registrasi pengguna/analis baru
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, role]
+              properties:
+                username: {type: string, example: "analis_baru"}
+                email: {type: string, example: "analis@amikom.ac.id"}
+                role: {type: string, example: "SOC_ANALYST"}
+      responses:
+        '201': {description: User created}
+        '409': {description: Username atau email duplikat}
+  /api/v1/assets:
+    get:
+      summary: Daftar seluruh aset
+      responses:
+        '200': {description: Berhasil mengambil daftar aset}
+    post:
+      summary: Tambah aset infrastruktur baru
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_name, asset_type, ip_or_url, criticality]
+              properties:
+                asset_name: {type: string, example: "Payment Gateway Simulasi"}
+                asset_type: {type: string, example: "API_SERVER"}
+                ip_or_url: {type: string, example: "https://pay.simulasi.local/api"}
+                criticality: {type: string, example: "HIGH"}
+      responses:
+        '201': {description: Asset created}
+  /api/v1/assets/{asset_id}:
+    get:
+      summary: Detail aset beserta daftar kerentanannya
+      parameters:
+        - name: asset_id
+          in: path
+          required: true
+          schema: {type: integer, example: 1}
+      responses:
+        '200': {description: Detail aset ditemukan}
+        '404': {description: Aset tidak ditemukan}
+    put:
+      summary: Perbarui data aset
+      parameters:
+        - name: asset_id
+          in: path
+          required: true
+          schema: {type: integer, example: 1}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                asset_name: {type: string, example: "Game Auth API v2"}
+                criticality: {type: string, example: "CRITICAL"}
+      responses:
+        '200': {description: Asset updated}
+    delete:
+      summary: Hapus aset (ditolak 409 jika masih terikat insiden)
+      parameters:
+        - name: asset_id
+          in: path
+          required: true
+          schema: {type: integer, example: 1}
+      responses:
+        '200': {description: Asset deleted}
+        '409': {description: Tidak dapat menghapus aset yang memiliki insiden}
+  /api/v1/vulnerabilities:
+    get:
+      summary: Daftar kerentanan (filter status & min_cvss)
+      parameters:
+        - name: status
+          in: query
+          schema: {type: string, example: "OPEN"}
+        - name: min_cvss
+          in: query
+          schema: {type: number, example: 7.0}
+      responses:
+        '200': {description: Berhasil mengambil daftar kerentanan}
+    post:
+      summary: Catat temuan kerentanan baru
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_id, title, cvss_score, severity]
+              properties:
+                asset_id: {type: integer, example: 1}
+                cve_code: {type: string, example: "CWE-287"}
+                title: {type: string, example: "Improper Authentication Validation"}
+                cvss_score: {type: number, example: 8.5}
+                severity: {type: string, example: "HIGH"}
+                user_id: {type: integer, example: 2}
+      responses:
+        '201': {description: Vulnerability logged}
+        '422': {description: Skor CVSS atau severity tidak valid}
+  /api/v1/vulnerabilities/{vuln_id}:
+    patch:
+      summary: Perbarui status mitigasi kerentanan
+      parameters:
+        - name: vuln_id
+          in: path
+          required: true
+          schema: {type: integer, example: 1}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: {type: string, example: "MITIGATED"}
+                user_id: {type: integer, example: 2}
+      responses:
+        '200': {description: Status diperbarui}
+  /api/v1/incidents:
+    get:
+      summary: Daftar insiden (Search, Filter, Sorting, Pagination)
+      parameters:
+        - name: search
+          in: query
+          schema: {type: string, example: "Credential"}
+        - name: severity
+          in: query
+          schema: {type: string, example: "CRITICAL"}
+        - name: status
+          in: query
+          schema: {type: string, example: "INVESTIGATING"}
+        - name: sort_by
+          in: query
+          schema: {type: string, example: "occurred_at"}
+        - name: order
+          in: query
+          schema: {type: string, example: "desc"}
+        - name: page
+          in: query
+          schema: {type: integer, example: 1}
+        - name: per_page
+          in: query
+          schema: {type: integer, example: 5}
+      responses:
+        '200': {description: Daftar insiden terpaginasi}
+    post:
+      summary: Laporkan insiden keamanan baru
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_id, reporter_id, title, incident_type, severity, description]
+              properties:
+                asset_id: {type: integer, example: 1}
+                vulnerability_id: {type: integer, example: 1}
+                reporter_id: {type: integer, example: 1}
+                title: {type: string, example: "Percobaan Brute Force API Login"}
+                incident_type: {type: string, example: "BRUTE_FORCE"}
+                severity: {type: string, example: "HIGH"}
+                status: {type: string, example: "OPEN"}
+                description: {type: string, example: "Simulasi lonjakan request login gagal."}
+      responses:
+        '201': {description: Incident created}
+  /api/v1/incidents/{incident_id}:
+    get:
+      summary: Detail satu insiden
+      parameters:
+        - name: incident_id
+          in: path
+          required: true
+          schema: {type: integer, example: 1}
+      responses:
+        '200': {description: Detail insiden ditemukan}
+        '404': {description: Insiden tidak ditemukan}
+    put:
+      summary: Perbarui status/severity/deskripsi insiden
+      parameters:
+        - name: incident_id
+          in: path
+          required: true
+          schema: {type: integer, example: 1}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: {type: string, example: "RESOLVED"}
+                description: {type: string, example: "Mitigasi simulasi selesai diterapkan."}
+                user_id: {type: integer, example: 1}
+      responses:
+        '200': {description: Incident updated}
+    delete:
+      summary: Hapus laporan insiden
+      parameters:
+        - name: incident_id
+          in: path
+          required: true
+          schema: {type: integer, example: 4}
+      responses:
+        '200': {description: Incident deleted}
+  /api/v1/audit-logs:
+    get:
+      summary: Riwayat audit log otomatis
+      responses:
+        '200': {description: Berhasil mengambil riwayat audit log}
