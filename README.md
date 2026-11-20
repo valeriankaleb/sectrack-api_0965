@@ -5,7 +5,7 @@ MVP REST API berbasis **Python Flask**, **SQLAlchemy ORM**, dan arsitektur **MVC
 - **Nama:** Valerian Kaleb Setiawirawan
 - **NIM:** 23.83.0965
 - **Kelas:** 23 TK01
-- **Live Demo URL:** *(akan diperbarui setelah deployment)*
+- **Live Demo URL:** https://sectrack-api-0965.vercel.app
 - **Spesifikasi OpenAPI 3.0:** [`openapi.yaml`](./openapi.yaml)
 
 ---
