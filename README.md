@@ -23,8 +23,8 @@ SecTrack API menghubungkan 5 tabel relasional utama (`users`, `assets`, `vulnera
 Pastikan Python 3.10+ telah terpasang, lalu jalankan perintah berikut:
 
 ```bash
-git clone [https://github.com/](https://github.com/)valeriankaleb/sectrack-api.git
-cd sectrack-api
+git clone https://github.com/valeriankaleb/sectrack-api_0965.git
+cd sectrack-api_0965
 python -m venv venv
 
 # Aktivasi virtual environment (Windows CMD/PowerShell):
